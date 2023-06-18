@@ -1,0 +1,17 @@
+name: niva-forecast
+
+channels:
+- conda-forge
+- menpo
+- defaults
+
+dependencies:
+  - python>=3.8
+  - numpy==1.23.5
+  - scipy==1.9.3
+  - autopep8>=2.0.0
+  - pip>=22.3.1
+  - astropy>=5.1
+  - pyorbital>=1.7.1
+  - requests>=2.28
+  - pandas>=1.3
