@@ -9,7 +9,7 @@ import pandas as pd
 # Debug flag
 DEBUG = False
 
-file_dir = os.path.dirname(os.path.realpath(__file__)) 
+file_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Satellites as dict
 satellites = {
@@ -22,6 +22,7 @@ satellites = {
     "HYPSO-1": [51053, "Line1", "Line2"],
 }
 
+# Locations as dict
 locations = {
     "Mjøsa": [60.70, 10.98, 0.0],
     "Tyrifjorden": [60.03, 10.18, 0.0],
@@ -29,7 +30,17 @@ locations = {
     "Vansjø": [59.40, 10.82, 0.0],
 }
 
+
 def collect_TLEs(satellites: dict) -> dict:
+    """
+    Collects TLEs from celestrak.org and updates the TLEs in the satellites dict
+
+    Args:
+        satellites (dict): dict of satellites with TLEs to be updated
+
+    Returns:
+        dict: dict of satellites with updated TLEs
+    """
     try:
         for satellite in satellites:
             if DEBUG:
@@ -45,6 +56,17 @@ def collect_TLEs(satellites: dict) -> dict:
 
 
 def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*3) -> dict:
+    """
+    Computes passes for each satellite at each location
+
+    Args:
+        satellites (dict): dict of satellites with TLEs
+        locations (dict): dict of locations
+        look_ahead_time (int, optional): look ahead time in hours. Defaults to 24*3.
+
+    Returns:
+        dict: dict of satellites with passes for each location
+    """
     if DEBUG:
         print("collect_TLEs() successful")
     for satellite in satellites:
@@ -71,43 +93,56 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
             pass_info = []
             for i in range(len(loc_info)):
                 pass_info.append(dict())
-                
-                pass_info[i]["UTC0_datetime"] = loc_info[i][2].strftime("%Y-%m-%d %H:%M:%SZ")
 
-                temp_obj = sat_obj.get_observer_look(loc_info[i][2], 
-                                                         locations[loc][0], 
-                                                         locations[loc][1], 
-                                                         locations[loc][2])
-                
+                pass_info[i]["UTC0_datetime"] = loc_info[i][2].strftime(
+                    "%Y-%m-%d %H:%M:%SZ")
+
+                temp_obj = sat_obj.get_observer_look(loc_info[i][2],
+                                                     locations[loc][0],
+                                                     locations[loc][1],
+                                                     locations[loc][2])
+
                 # reduce to two decimals
                 temp_obj = [round(temp_obj[0], 2), round(temp_obj[1], 2)]
 
                 pass_info[i]["azimuth"] = temp_obj[0]
                 pass_info[i]["elevation"] = temp_obj[1]
 
-
                 if DEBUG:
                     pass_info[i]["cloud_cover"] = -1
                 else:
-                    CCMET_obj = CCMET(locations[loc][0], locations[loc][1], loc_info[i][2])
+                    CCMET_obj = CCMET(
+                        locations[loc][0], locations[loc][1], loc_info[i][2])
                     pass_info[i]["cloud_cover"] = CCMET_obj.get_cloud_cover()
 
             satellites[satellite][3][loc] = pass_info
 
     return satellites
 
-def date_table_generator(satellites_passes: dict, 
-                         min_elev: float = 40.0, 
+
+def date_table_generator(satellites_passes: dict,
+                         min_elev: float = 40.0,
                          max_clouds: float = 100.0) -> dict:
+    """
+    Generates a date table from the passes
+
+    Args:
+        satellites_passes (dict): dict of satellites with passes for each location
+        min_elev (float, optional): minimum elevation in degrees. Defaults to 40.0.
+        max_clouds (float, optional): maximum cloud cover in percent. Defaults to 100.0.
+
+    Returns:
+        dict: dict of dates with passes
+    """
     from pyorbital.orbital import astronomy
 
     date_table = dict()
     for satellite in satellites_passes:
         for loc in satellites_passes[satellite][3]:
-            for pass_list in satellites_passes[satellite][3][loc]:   
+            for pass_list in satellites_passes[satellite][3][loc]:
                 # check sun zenith angle
-                sza = astronomy.sun_zenith_angle(pass_list["UTC0_datetime"], 
-                                                 locations[loc][0], 
+                sza = astronomy.sun_zenith_angle(pass_list["UTC0_datetime"],
+                                                 locations[loc][0],
                                                  locations[loc][1])
                 if sza > 90.0:
                     continue
@@ -120,10 +155,19 @@ def date_table_generator(satellites_passes: dict,
                     dict_obj["satellite"] = satellite
                     dict_obj["location"] = loc
                     date_table[date].append(dict_obj)
-    
+
     return date_table
 
+
 def date_table_to_markdown(date_table: dict) -> str:
+    """ Generates a markdown table from the date table
+
+    Args:
+        date_table (dict): dict of dates with passes
+
+    Returns:
+        str: markdown table
+    """
     return_str = ""
 
     for date in date_table:
@@ -134,7 +178,8 @@ def date_table_to_markdown(date_table: dict) -> str:
         return_str += "--- | --- | --- | --- | --- | ---\n"
         for i in range(len(df_obj)):
             clock_time = df_obj.iloc[i]["UTC0_datetime"].split(" ")[1]
-            loc_lat_lon = df_obj.iloc[i]["location"] + f" ({locations[df_obj.iloc[i]['location']][0]}, {locations[df_obj.iloc[i]['location']][1]})"
+            loc_lat_lon = df_obj.iloc[i]["location"] + \
+                f" ({locations[df_obj.iloc[i]['location']][0]}, {locations[df_obj.iloc[i]['location']][1]})"
             return_str += f"{df_obj.iloc[i]['satellite']} | {loc_lat_lon} | {clock_time} | {df_obj.iloc[i]['azimuth']} | {df_obj.iloc[i]['elevation']} | {df_obj.iloc[i]['cloud_cover']}\n"
         return_str += "\n\n"
 
@@ -167,7 +212,7 @@ if __name__ == "__main__":
         print("Debug mode activated")
 
     if not DEBUG:
-        satellites = collect_TLEs(satellites) # Update TLEs
+        satellites = collect_TLEs(satellites)  # Update TLEs
     elif DEBUG and os.path.isfile("tle/satellites.json"):
         with open("tle/satellites.json", "r") as f:
             satellites = json.load(f)
@@ -176,8 +221,8 @@ if __name__ == "__main__":
         with open("tle/satellites.json", "w") as f:
             json.dump(satellites, f, indent=1)
 
-
-    satellites_passes = compute_passes(satellites, locations, args.look_ahead_time)
+    satellites_passes = compute_passes(
+        satellites, locations, args.look_ahead_time)
 
     date_table = date_table_generator(satellites_passes)
 
@@ -190,7 +235,7 @@ if __name__ == "__main__":
     markdown_str += "--- | --- | --- | ---\n"
     for loc in locations:
         markdown_str += f"{loc} | {locations[loc][0]} | {locations[loc][1]} | {locations[loc][2]}\n"
-    
+
     # add table of satellites
     markdown_str += "\n\n## Satellites\n\n"
     markdown_str += "Satellite | NORAD ID | Line 1 | Line 2\n"
@@ -200,4 +245,3 @@ if __name__ == "__main__":
 
     with open("README.md", "w") as f:
         f.write(markdown_str)
-    
