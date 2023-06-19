@@ -37,8 +37,10 @@ jobs:
           environment-file: environment.yml
           activate-environment: niva-forecast
       - name: Run tle-checker
+        shell: bash -el {0}
         run: |
-          conda init bash && source ~/.bashrc
+          conda info
+          conda env list
           conda activate niva-forecast
           python pass_computer.py
   # Build job, depends on tle-checker job completing
