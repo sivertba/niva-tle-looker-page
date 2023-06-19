@@ -47,6 +47,15 @@ jobs:
         with:
           name: pass overview
           path: README.md
+      - name: Push changes to README.md to main branch
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Update README.md"
+          commit_options: '--no-verify --signoff --allow-empty'
+          repository: ${{ github.repository }}
+          branch: main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Build job, depends on tle-checker job completing
   build:
@@ -62,10 +71,6 @@ jobs:
         with:
           source: ./
           destination: ./_site
-      - name: Copy modified README.md to _site directory
-        run: |
-          chmod -R u+rw _site
-          cp README.md _site/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
 
