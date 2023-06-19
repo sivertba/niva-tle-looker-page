@@ -55,7 +55,7 @@ jobs:
           commit_message: "Update README.md"
           branch: main
           commit_options: '--no-verify --signoff'
-          file_pattern: "*.md"
+          file_pattern: "*.md *.html"
 
   # Build job, depends on tle-checker job completing
   build:

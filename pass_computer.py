@@ -5,6 +5,7 @@ from weather.ccmet import CCMET
 import json
 import os
 import pandas as pd
+import pypandoc
 
 # Debug flag
 DEBUG = False
@@ -13,13 +14,13 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Satellites as dict
 satellites = {
-    "Landsat-7": [25682, "Line1", "Line2"],
-    "Landsat-8": [39084, "Line1", "Line2"],
+    # "Landsat-7": [25682, "Line1", "Line2"],
+    # "Landsat-8": [39084, "Line1", "Line2"],
+    "HYPSO-1": [51053, "Line1", "Line2"],
     "Sentinel-3A": [41335, "Line1", "Line2"],
     "Sentinel-3B": [43437, "Line1", "Line2"],
     "SENTINEL-2A": [40697, "Line1", "Line2"],
     "SENTINEL-2B": [42063, "Line1", "Line2"],
-    "HYPSO-1": [51053, "Line1", "Line2"],
 }
 
 # Locations as dict
@@ -86,7 +87,8 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
                 locations[loc][0],
                 locations[loc][1],
                 locations[loc][2],
-                tol=1
+                tol=0.001,
+                horizon=0.0
             )
 
             # extract max elevation datetime and compute elevation
@@ -170,19 +172,28 @@ def date_table_to_markdown(date_table: dict) -> str:
     """
     return_str = ""
 
-    for date in date_table:
+    entries = []
+    for date in date_table.keys():
         df_obj = pd.DataFrame(date_table[date])
         df_obj = df_obj.sort_values(by=["UTC0_datetime"])
-        return_str += f"## {date}\n"
-        return_str += "Satellite | Location | UTC+0 | Azimuth | Elevation | Cloud Cover\n"
-        return_str += "--- | --- | --- | --- | --- | ---\n"
+        entry = ""
         for i in range(len(df_obj)):
             clock_time = df_obj.iloc[i]["UTC0_datetime"].split(" ")[1]
             loc_lat_lon = df_obj.iloc[i]["location"] + \
                 f" ({locations[df_obj.iloc[i]['location']][0]}, {locations[df_obj.iloc[i]['location']][1]})"
-            return_str += f"{df_obj.iloc[i]['satellite']} | {loc_lat_lon} | {clock_time} | {df_obj.iloc[i]['azimuth']} | {df_obj.iloc[i]['elevation']} | {df_obj.iloc[i]['cloud_cover']}\n"
-        return_str += "\n\n"
+            entry += f"{df_obj.iloc[i]['satellite']} | {loc_lat_lon} | {clock_time} | {df_obj.iloc[i]['elevation']} | {df_obj.iloc[i]['cloud_cover']}\n"
 
+        entries.append([date, entry])
+
+    # concatenate all entries in the correct order
+    sorted_entries = sorted(entries, key=lambda x: x[0])
+    return_str = ""
+    for entry in sorted_entries:
+        return_str += f"## {entry[0]}\n"
+        return_str += "Satellite | Location | UTC+0 | Elevation | Cloud Cover\n"
+        return_str += "--- | --- | --- | --- | --- | ---\n"
+        return_str += entry[1]
+    return_str += "\n\n"
     return return_str
 
 
@@ -216,7 +227,7 @@ if __name__ == "__main__":
         "--maxclouds",
         help="Maximum cloud cover for passes",
         type=float,
-        default=100.0,
+        default=50.0,
     )
 
     args = parser.parse_args()
@@ -248,6 +259,11 @@ if __name__ == "__main__":
         " that are used in the forecast. The forecast is generated using the pyorbital library. " + \
         "The forecast is generated for the next week and is updated every day. " + \
         "\n\n"
+    
+    markdown_str += "The forecast is generated using the following parameters:\n\n"
+    markdown_str += f"Minimum elevation: {args.minelev} degrees\n\n"
+    markdown_str += f"Maximum cloud cover: {args.maxclouds} percent\n\n"
+    markdown_str += f"Look ahead time: {args.look_ahead_hrs} hours\n\n"
 
     markdown_str += date_table_to_markdown(date_table)
 
@@ -267,3 +283,20 @@ if __name__ == "__main__":
 
     with open("README.md", "w") as f:
         f.write(markdown_str)
+
+    # convert markdown to html
+    output = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n<body>\n"
+    # make entire website 900 px wide
+    output += "<div style=\"width: 900px; margin-left: auto; margin-right: auto;\">\n"
+    pdoc_args = ['--mathjax']
+    output += pypandoc.convert_text(markdown_str, 'html5', format='md', extra_args=pdoc_args, encoding='utf-8')
+    output += "</div>"
+    output += "\n</body>\n</html>"
+
+    output = output.replace("<table>", "<table width=\"800px\" style=\"margin-left: auto; margin-right: auto;\">")
+    # make all table elements center
+    output = output.replace("<td>", "<td align=\"center\">")
+    output = output.replace("<th>", "<th align=\"center\">")
+
+    with open("index.html", "w") as f:
+        f.write(output)
