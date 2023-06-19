@@ -25,15 +25,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # tle-checker:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
-  #     - name: Run script
-  #      run: python3 /path/to/your/script.py
-  #     - name: Generate table
-  #      run: python3 /path/to/your/table.py
+  tle-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup conda envirnoment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          conda-version: 'latest'
+          activate-environment: niva-forecast
+          environment-file: environment.yml
+      - name: Run TLE checker
+        run: python pass_computer.py
   # Build job
   build:
     runs-on: ubuntu-latest
