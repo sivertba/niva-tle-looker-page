@@ -281,8 +281,8 @@ if __name__ == "__main__":
     for sat in satellites:
         markdown_str += f"{sat} | {satellites[sat][0]} | {satellites[sat][1]} | {satellites[sat][2]}\n"
 
-    with open("README.md", "w") as f:
-        f.write(markdown_str)
+    # with open("README.md", "w") as f:
+    #     f.write(markdown_str)
 
     # convert markdown to html
     output = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n<body>\n"
