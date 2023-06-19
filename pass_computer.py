@@ -21,9 +21,9 @@ satellites = {
 }
 
 locations = {
-    "Mjøsa": [60.8, 10.8, 0.0],
+    "Mjøsa": [60.70, 10.98, 0.0],
+    "Tyrifjorden": [60.03, 10.18, 0.0],
 }
-
 
 def collect_TLEs(satellites: dict) -> dict:
     try:
@@ -179,6 +179,20 @@ if __name__ == "__main__":
 
     markdown_str = "# Satellite Forecast\n\n"
     markdown_str += date_table_to_markdown(date_table)
+
+    # add table of locations
+    markdown_str += "## Locations\n\n"
+    markdown_str += "Location | Latitude | Longitude | Elevation\n"
+    markdown_str += "--- | --- | --- | ---\n"
+    for loc in locations:
+        markdown_str += f"{loc} | {locations[loc][0]} | {locations[loc][1]} | {locations[loc][2]}\n"
+    
+    # add table of satellites
+    markdown_str += "\n\n## Satellites\n\n"
+    markdown_str += "Satellite | NORAD ID | Line 1 | Line 2\n"
+    markdown_str += "--- | --- | --- | ---\n"
+    for sat in satellites:
+        markdown_str += f"{sat} | {satellites[sat][0]} | {satellites[sat][1]} | {satellites[sat][2]}\n"
 
     with open("README.md", "w") as f:
         f.write(markdown_str)
