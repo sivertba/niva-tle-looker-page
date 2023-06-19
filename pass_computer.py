@@ -123,7 +123,8 @@ def date_table_to_markdown(date_table: dict) -> str:
         return_str += "--- | --- | --- | --- | --- | ---\n"
         for i in range(len(df_obj)):
             clock_time = df_obj.iloc[i]["UTC0_datetime"].split(" ")[1]
-            return_str += f"{df_obj.iloc[i]['satellite']} | {df_obj.iloc[i]['location']} | {clock_time} | {df_obj.iloc[i]['azimuth']} | {df_obj.iloc[i]['elevation']} | {df_obj.iloc[i]['cloud_cover']}\n"
+            loc_lat_lon = df_obj.iloc[i]["location"] + f" ({locations[df_obj.iloc[i]['location']][0]}, {locations[df_obj.iloc[i]['location']][1]})"
+            return_str += f"{df_obj.iloc[i]['satellite']} | {loc_lat_lon} | {clock_time} | {df_obj.iloc[i]['azimuth']} | {df_obj.iloc[i]['elevation']} | {df_obj.iloc[i]['cloud_cover']}\n"
         return_str += "\n\n"
 
     return return_str
