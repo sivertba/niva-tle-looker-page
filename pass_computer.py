@@ -174,7 +174,7 @@ def date_table_to_markdown(date_table: dict) -> str:
         df_obj = pd.DataFrame(date_table[date])
         df_obj = df_obj.sort_values(by=["UTC0_datetime"])
         return_str += f"## {date}\n"
-        return_str += "Satellite | Location | UTC0 | Azimuth | Elevation | Cloud Cover\n"
+        return_str += "Satellite | Location | UTC+0 | Azimuth | Elevation | Cloud Cover\n"
         return_str += "--- | --- | --- | --- | --- | ---\n"
         for i in range(len(df_obj)):
             clock_time = df_obj.iloc[i]["UTC0_datetime"].split(" ")[1]
@@ -199,10 +199,24 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--look_ahead_time",
+        "--look_ahead_hrs",
         help="How many hours to look ahead",
         type=int,
         default=24*7,
+    )
+
+    parser.add_argument(
+        "--minelev",
+        help="Minimum elevation for passes",
+        type=float,
+        default=40.0,
+    )
+
+    parser.add_argument(
+        "--maxclouds",
+        help="Maximum cloud cover for passes",
+        type=float,
+        default=100.0,
     )
 
     args = parser.parse_args()
@@ -222,16 +236,24 @@ if __name__ == "__main__":
             json.dump(satellites, f, indent=1)
 
     satellites_passes = compute_passes(
-        satellites, locations, args.look_ahead_time)
+        satellites, locations, args.look_ahead_hrs)
 
-    date_table = date_table_generator(satellites_passes)
+    date_table = date_table_generator(satellites_passes, args.minelev, args.maxclouds)
 
     markdown_str = "# Satellite Forecast\n\n"
+
+    # write some info about what the script does to the markdown file
+    markdown_str += "This website contains a forecast of satellite passes for the next week. " + \
+        "At the bottom of the site you can see the different satellites and the different locations" + \
+        " that are used in the forecast. The forecast is generated using the pyorbital library. " + \
+        "The forecast is generated for the next week and is updated every day. " + \
+        "\n\n"
+
     markdown_str += date_table_to_markdown(date_table)
 
     # add table of locations
     markdown_str += "## Locations\n\n"
-    markdown_str += "Location | Latitude | Longitude | Elevation\n"
+    markdown_str += "Location | Latitude | Longitude | Altitude\n"
     markdown_str += "--- | --- | --- | ---\n"
     for loc in locations:
         markdown_str += f"{loc} | {locations[loc][0]} | {locations[loc][1]} | {locations[loc][2]}\n"
