@@ -33,7 +33,6 @@ jobs:
       - name: Setup conda envirnoment
         uses: conda-incubator/setup-miniconda@v2
         with:
-          conda-version: latest
           environment-file: environment.yml
           activate-environment: niva-forecast
       - name: Run tle-checker
