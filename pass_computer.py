@@ -9,6 +9,8 @@ import pandas as pd
 # Debug flag
 DEBUG = False
 
+file_dir = os.path.dirname(os.path.realpath(__file__)) 
+
 # Satellites as dict
 satellites = {
     "Landsat-7": [25682, "Line1", "Line2"],
@@ -23,6 +25,8 @@ satellites = {
 locations = {
     "Mjøsa": [60.70, 10.98, 0.0],
     "Tyrifjorden": [60.03, 10.18, 0.0],
+    "Hemnessjøen": [59.68, 11.46, 0.0],
+    "Vansjø": [59.40, 10.82, 0.0],
 }
 
 def collect_TLEs(satellites: dict) -> dict:
@@ -81,11 +85,11 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
                 pass_info[i]["azimuth"] = temp_obj[0]
                 pass_info[i]["elevation"] = temp_obj[1]
 
-                CCMET_obj = CCMET(locations[loc][0], locations[loc][1], loc_info[i][2])
 
                 if DEBUG:
-                    pass_info[i]["cloud_cover"] = 0.0
+                    pass_info[i]["cloud_cover"] = -1
                 else:
+                    CCMET_obj = CCMET(locations[loc][0], locations[loc][1], loc_info[i][2])
                     pass_info[i]["cloud_cover"] = CCMET_obj.get_cloud_cover()
 
             satellites[satellite][3][loc] = pass_info
