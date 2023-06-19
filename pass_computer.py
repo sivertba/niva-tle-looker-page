@@ -93,13 +93,20 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
     return satellites
 
 def date_table_generator(satellites_passes: dict, 
-                         min_elev: float = 50.0, 
+                         min_elev: float = 40.0, 
                          max_clouds: float = 100.0) -> dict:
-    
+    from pyorbital.orbital import astronomy
+
     date_table = dict()
     for satellite in satellites_passes:
         for loc in satellites_passes[satellite][3]:
-            for pass_list in satellites_passes[satellite][3][loc]:
+            for pass_list in satellites_passes[satellite][3][loc]:   
+                # check sun zenith angle
+                sza = astronomy.sun_zenith_angle(pass_list["UTC0_datetime"], 
+                                                 locations[loc][0], 
+                                                 locations[loc][1])
+                if sza > 90.0:
+                    continue
                 if pass_list["elevation"] >= min_elev and pass_list["cloud_cover"] <= max_clouds:
                     # get the date as a string
                     date = pass_list["UTC0_datetime"].split(" ")[0]
