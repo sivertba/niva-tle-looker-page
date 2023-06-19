@@ -37,7 +37,9 @@ jobs:
           environment-file: environment.yml
           activate-environment: niva-forecast
       - name: Run tle-checker
-        run: python pass_computer.py
+        run: |
+          conda activate niva-forecast
+          python pass_computer.py
   # Build job, depends on tle-checker job completing
   build:
     needs: tle-checker
