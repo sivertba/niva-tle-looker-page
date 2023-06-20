@@ -63,10 +63,10 @@ jobs:
       - name: Run pass_computer.py script
         run: python3 pass_computer.py
 
-      # Deploy to GitHub Pages
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .  # Change this to the directory where index.html is generated
+          branch: main
+          folder: .
+          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}
