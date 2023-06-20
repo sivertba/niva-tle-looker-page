@@ -178,10 +178,10 @@ def date_table_generator(satellites_passes: dict,
                     continue
 
                 # check if min_elev key exists in satellite dict
-                # if "min_elev" in satellites_passes[satellite]:
-                #     min_elev = satellites_passes[satellite]["min_elev"]
-                # else:
-                #     min_elev = min_elev_static
+                if "min_elev" in satellites_passes[satellite]:
+                    min_elev = satellites_passes[satellite]["min_elev"]
+                else:
+                    min_elev = min_elev_static
 
                 if pass_list["elevation"] >= min_elev and pass_list["cloud_cover"] <= max_clouds:
                     # get the date as a string
