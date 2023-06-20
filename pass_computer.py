@@ -56,7 +56,7 @@ def collect_TLEs(satellites: dict) -> dict:
     return satellites
 
 
-def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*3) -> dict:
+def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*3, minimumElevation: float = 40) -> dict:
     """
     Computes passes for each satellite at each location
 
@@ -64,6 +64,7 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
         satellites (dict): dict of satellites with TLEs
         locations (dict): dict of locations
         look_ahead_time (int, optional): look ahead time in hours. Defaults to 24*3.
+        minimumElevation (float, optional): minimum elevation in degrees. Defaults to 40.
 
     Returns:
         dict: dict of satellites with passes for each location
@@ -84,42 +85,65 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
             loc_info = sat_obj.get_next_passes(
                 datetime.utcnow(),
                 look_ahead_time,
-                locations[loc][0],
                 locations[loc][1],
+                locations[loc][0],
                 locations[loc][2],
                 tol=0.001,
-                horizon=0.0
-            )
+                horizon=int( minimumElevation // 1)
+                )
 
             # extract max elevation datetime and compute elevation
-            pass_info = []
-            for i in range(len(loc_info)):
-                pass_info.append(dict())
-
-                pass_info[i]["UTC0_datetime"] = loc_info[i][2].strftime(
-                    "%Y-%m-%d %H:%M:%SZ")
-
-                temp_obj = sat_obj.get_observer_look(loc_info[i][2],
-                                                     locations[loc][0],
-                                                     locations[loc][1],
-                                                     locations[loc][2])
-
-                # reduce to two decimals
-                temp_obj = [round(temp_obj[0], 2), round(temp_obj[1], 2)]
-
-                pass_info[i]["azimuth"] = temp_obj[0]
-                pass_info[i]["elevation"] = temp_obj[1]
-
-                if DEBUG:
-                    pass_info[i]["cloud_cover"] = -1
-                else:
-                    CCMET_obj = CCMET(
-                        locations[loc][0], locations[loc][1], loc_info[i][2])
-                    pass_info[i]["cloud_cover"] = CCMET_obj.get_cloud_cover()
-
+            pass_info = get_pass_info_list(locations, sat_obj, loc, loc_info)
             satellites[satellite][3][loc] = pass_info
 
     return satellites
+
+def get_pass_info_list(
+        locations: dict, 
+        sat_obj: Orbital, 
+        loc: str,
+        loc_info: list
+        ) -> list:
+    """
+    Extracts max elevation datetime and computes elevation for each pass
+
+    Args:
+        locations (dict): dict of locations
+        sat_obj (Orbital): pyorbital orbital object
+        loc (str): location
+        loc_info (list): list of passes
+
+    Returns:
+        list: list of passes with max elevation datetime and elevation
+    """
+    pass_info = []
+    for i in range(len(loc_info)):
+        pass_info.append(dict())
+
+        pass_info[i]["UTC0_datetime"] = loc_info[i][2].strftime(
+                    "%Y-%m-%d %H:%M:%SZ")
+
+        temp_obj = sat_obj.get_observer_look(loc_info[i][2],
+                                                     locations[loc][1],
+                                                     locations[loc][0],
+                                                     locations[loc][2])
+
+        # reduce to two decimals
+        temp_obj = [round(temp_obj[0], 2), round(temp_obj[1], 2)]
+
+        pass_info[i]["azimuth"] = temp_obj[0]
+        pass_info[i]["elevation"] = temp_obj[1]
+
+        if DEBUG:
+            pass_info[i]["cloud_cover"] = -1
+        else:
+            CCMET_obj = CCMET(
+                        locations[loc][0], locations[loc][1], loc_info[i][2])
+            pass_info[i]["cloud_cover"] = CCMET_obj.get_cloud_cover()
+    
+    return pass_info
+
+
 
 
 def date_table_generator(satellites_passes: dict,
@@ -197,7 +221,7 @@ def date_table_to_markdown(date_table: dict) -> str:
     return return_str
 
 
-if __name__ == "__main__":
+def _get_cli_args():
     import argparse
     parser = argparse.ArgumentParser()
 
@@ -231,6 +255,13 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    return args
+
+if __name__ == "__main__":
+    args = _get_cli_args()
+
+    # save start time of script
+    start_time = datetime.utcnow()
 
     if args.debug:
         DEBUG = True
@@ -247,11 +278,11 @@ if __name__ == "__main__":
             json.dump(satellites, f, indent=1)
 
     satellites_passes = compute_passes(
-        satellites, locations, args.look_ahead_hrs)
+        satellites, locations, args.look_ahead_hrs, args.minelev)
 
     date_table = date_table_generator(satellites_passes, args.minelev, args.maxclouds)
 
-    markdown_str = "# Satellite Forecast\n\n"
+    markdown_str = "# Satellite Forecaster\n\n"
 
     # write some info about what the script does to the markdown file
     markdown_str += "This website contains a forecast of satellite passes for the next week. " + \
@@ -264,6 +295,10 @@ if __name__ == "__main__":
     markdown_str += f"Minimum elevation: {args.minelev} degrees\n\n"
     markdown_str += f"Maximum cloud cover: {args.maxclouds} percent\n\n"
     markdown_str += f"Look ahead time: {args.look_ahead_hrs} hours\n\n"
+    script_time = datetime.utcnow() - start_time
+    # with two decimals in seconds
+    script_time = round(script_time.total_seconds(), 2)
+    markdown_str += f"Time to complete script (seconds): {script_time}\n\n"
 
     markdown_str += date_table_to_markdown(date_table)
 
@@ -280,9 +315,6 @@ if __name__ == "__main__":
     markdown_str += "--- | --- | --- | ---\n"
     for sat in satellites:
         markdown_str += f"{sat} | {satellites[sat][0]} | {satellites[sat][1]} | {satellites[sat][2]}\n"
-
-    # with open("README.md", "w") as f:
-    #     f.write(markdown_str)
 
     # convert markdown to html
     output = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n<body>\n"
