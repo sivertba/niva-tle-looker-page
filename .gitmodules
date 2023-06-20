@@ -1,3 +1,0 @@
-[submodule "flight-scripts"]
-	path = flight-scripts
-	url = git@github.com:NTNU-SmallSat-Lab/flight-scripts.git
