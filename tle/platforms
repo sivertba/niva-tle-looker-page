@@ -1,0 +1,13 @@
+# The satellite platform names and international designators are given in a
+# file $PYORBITAL_CONFIG_PATH/platforms.txt in the following format. Copy this
+# file to $PYORBITAL_CONFIG_PATH
+#
+# Mappings between satellite catalogue numbers and corresponding
+# platform names from OSCAR.
+Landsat-7 25682
+Landsat-8 39084
+Sentinel-3A 41335
+Sentinel-3B 43437
+SENTINEL-2A 40697
+SENTINEL-2B 42063
+HYPSO-1 51053
