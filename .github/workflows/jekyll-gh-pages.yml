@@ -48,11 +48,11 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: pass overview
-          path: README.md
-      - name: Push changes to README.md to main branch
+          path: index.html
+      - name: Push changes to index.html to main branch
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "Update README.md"
+          commit_message: "Update index.html"
           branch: main
           commit_options: '--no-verify --signoff'
           file_pattern: "*.html"
