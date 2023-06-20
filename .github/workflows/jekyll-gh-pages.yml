@@ -25,39 +25,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  tle-checker:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup conda envirnoment
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
         with:
-          environment-file: environment.yml
-          activate-environment: niva-forecast
-      - name: Run tle-checker
-        shell: bash -el {0}
+          python-version: '3.8'
+
+      - name: Upgrade pip
         run: |
-          conda info
-          conda env list
-          conda activate niva-forecast
-          python pass_computer.py
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+          # install pip=>20.1 to use "pip cache dir"
+          python3 -m pip install --upgrade pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
         with:
-          name: pass overview
-          path: index.html
-      - name: Push changes to index.html to main branch
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "Update index.html"
-          branch: main
-          commit_options: '--no-verify --signoff'
-          file_pattern: "*.html"
-      - name: Deploy to GitHub Pages
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: python3 -m pip install -r ./requirements.txt
+
+      # Run your script
+      - name: Run pass_computer.py script
+        run: python3 pass_computer.py
+
+      # Deploy to GitHub Pages
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/main' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          publish_dir: .  # Change this to the directory where index.html is generated
