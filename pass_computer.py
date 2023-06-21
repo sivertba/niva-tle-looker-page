@@ -15,11 +15,11 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Satellites as dict
 satellites = {
-    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 45},
-    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90-68.5/2},
-    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90-68.5/2},
-    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90-20.8},
-    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90-20.8},
+    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 50},
+    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90-28.5},
+    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90-28.5},
+    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90-20},
+    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90-20},
 }
 
 # Locations as dict
