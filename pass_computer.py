@@ -5,6 +5,7 @@ from weather.ccmet import CCMET
 import json
 import os
 import pypandoc
+import numpy as np
 
 # Debug flag
 DEBUG = False
@@ -14,8 +15,6 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Satellites as dict
 satellites = {
-    # "Landsat-7": {"catnr": 25682, "line1": "Line1", "line2": "Line2"},
-    # "Landsat-8": {"catnr": 39084, "line1": "Line1", "line2": "Line2"},
     "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 45},
     "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90-68.5/2},
     "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90-68.5/2},
@@ -137,12 +136,17 @@ def get_pass_info_list(
         if DEBUG:
             pass_info[i]["cloud_cover"] = -1
         else:
-            CCMET_obj = CCMET(
-                        locations[loc]["lat"], 
-                        locations[loc]["lon"], 
+            # Make a grid of .1 degree around the location and compute cloud cover for each point.
+            median_cloud_cover = []
+            for lat_steps in range(-1, 2):
+                for lon_steps in range(-1, 2):
+                    CCMET_obj = CCMET(
+                        locations[loc]["lat"] + lat_steps * 0.1, 
+                        locations[loc]["lon"] + lon_steps * 0.1, 
                         loc_info[i][2])
-            pass_info[i]["cloud_cover"] = CCMET_obj.get_cloud_cover()
-    
+                    median_cloud_cover.append(CCMET_obj.get_cloud_cover())
+            # compute median cloud cover        
+            pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
     return pass_info
 
 
@@ -303,10 +307,9 @@ if __name__ == "__main__":
         "At the bottom of the site you can see the different satellites and the different locations" + \
         " that are used in the forecast. The forecast is generated using the pyorbital library. " + \
         "The forecast is generated for the next week and is updated every day. " + \
-        "\n\n"
-    
+        "The cloud cover is retrieved from the Norwegian Meteorological Institute. " + \
+        "The cloud cover is given as the median of a grid at the location."    
     markdown_str += "The forecast is generated using the following parameters:\n\n"
-    markdown_str += f"Minimum elevation: {args.minelev} degrees\n\n"
     markdown_str += f"Maximum cloud cover: {args.maxclouds} percent\n\n"
     markdown_str += f"Look ahead time: {args.look_ahead_hrs} hours\n\n"
     script_time = datetime.utcnow() - start_time
@@ -338,17 +341,19 @@ if __name__ == "__main__":
 
     # convert markdown to html
     output = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n</head>\n<body>\n"
-    # make entire website 900 px wide
-    output += "<div style=\"width: 900px; margin-left: auto; margin-right: auto;\">\n"
+    output += '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">\n'
+    output += "<div style=\"width: 800px; margin-left: auto; margin-right: auto;\">\n"
     pdoc_args = ['--mathjax']
     output += pypandoc.convert_text(markdown_str, 'html5', format='md', extra_args=pdoc_args, encoding='utf-8')
     output += "</div>"
     output += "\n</body>\n</html>"
 
-    output = output.replace("<table>", "<table width=\"800px\" style=\"margin-left: auto; margin-right: auto;\">")
+    output = output.replace("<table>", "<table class='table' width=\"750px\" style=\"margin-left: auto; margin-right: auto;\">")
     # make all table elements center
     output = output.replace("<td>", "<td align=\"center\">")
     output = output.replace("<th>", "<th align=\"center\">")
+    output = output.replace("<h1", "<h1 class=\"title\" ")
+    output = output.replace("<h2", "<h2 class=\"subtitle\" ")
 
     with open("index.html", "w") as f:
         f.write(output)
