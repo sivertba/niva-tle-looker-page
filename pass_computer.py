@@ -9,6 +9,7 @@ import numpy as np
 
 # Debug flag
 DEBUG = False
+VERBOSE = False
 
 file_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,7 +44,7 @@ def collect_TLEs(satellites: dict) -> dict:
     """
     try:
         for satellite in satellites:
-            if DEBUG:
+            if DEBUG or VERBOSE:
                 print(f"collecting TLE for {satellite}")
             url = f"https://celestrak.org/NORAD/elements/gp.php?CATNR={satellites[satellite]['catnr']}&FORMAT=TLE"
             tle = requests.get(url)
@@ -115,6 +116,7 @@ def get_pass_info_list(
     Returns:
         list: list of passes with max elevation datetime and elevation
     """
+    import time
     pass_info = []
     for i in range(len(loc_info)):
         pass_info.append(dict())
@@ -145,8 +147,12 @@ def get_pass_info_list(
                         locations[loc]["lon"] + lon_steps * 0.1, 
                         loc_info[i][2])
                     median_cloud_cover.append(CCMET_obj.get_cloud_cover())
+                    # microsleep to avoid overloading the server
+                    time.sleep(0.1)
             # compute median cloud cover        
             pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
+            if VERBOSE:
+                print(f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']} for {sat_obj.name}")
     return pass_info
 
 
@@ -272,6 +278,12 @@ def _get_cli_args():
         default=50.0,
     )
 
+    parser.add_argument(
+        "--verbose",
+        help="Print verbose information",
+        action="store_true",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -284,6 +296,10 @@ if __name__ == "__main__":
     if args.debug:
         DEBUG = True
         print("Debug mode activated")
+    
+    if args.verbose:
+        VERBOSE = True
+        print("Verbose mode activated")
 
     if not DEBUG:
         satellites = collect_TLEs(satellites)  # Update TLEs
