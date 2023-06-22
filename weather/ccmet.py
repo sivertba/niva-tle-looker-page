@@ -1,12 +1,14 @@
 import datetime
+import logging
 import requests
+from typing import Dict
 
 
 class CCMET(object):
     """ Class for getting weather data from the yr.no API
     """
 
-    def __init__(self, lat, lon, time):
+    def __init__(self, lat: float, lon: float, time: datetime.datetime) -> None:
         """ Initialize the class
 
         :param lat: Latitude of the location
@@ -29,7 +31,7 @@ class CCMET(object):
         return self.cloud_area_fraction
 
 
-def get_forecast_at_time(lat: float, lon: float, time) -> dict:
+def get_forecast_at_time(lat: float, lon: float, time: datetime.datetime) -> Dict[str, float]:
     """ Get the forecast at a specific time
 
     :param lat: Latitude of the location
@@ -51,7 +53,7 @@ def get_forecast_at_time(lat: float, lon: float, time) -> dict:
     return r
 
 
-def get_forecast(lat: float, lon: float) -> dict:
+def get_forecast(lat: float, lon: float) -> Dict[str, float]:
     """ Get the forecast for a specific location
 
     :param lat: Latitude of the location
@@ -62,18 +64,22 @@ def get_forecast(lat: float, lon: float) -> dict:
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
 
-    r = requests.get(url.strip(), headers=headers, timeout=10)
-    if r.status_code != 200:
-        raise BadResponse("Error: " + str(r.status_code))
+    try:
+        r = requests.get(url.strip(), headers=headers, timeout=10)
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error getting forecast: {e}")
+        raise
 
     return r.json()
 
 
 if __name__ == '__main__':
     # Test the class
+    logging.basicConfig(level=logging.DEBUG)
     lat = 50.0
     lon = -100.0
     time = datetime.datetime.utcnow()
 
     ccmet = CCMET(lat, lon, time)
-    print(ccmet.get_cloud_cover())
+    logging.info(f"Cloud cover: {ccmet.get_cloud_cover()}")
