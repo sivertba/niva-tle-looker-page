@@ -147,8 +147,6 @@ def get_pass_info_list(
                         locations[loc]["lon"] + lon_steps * 0.1, 
                         loc_info[i][2])
                     median_cloud_cover.append(CCMET_obj.get_cloud_cover())
-                    # microsleep to avoid overloading the server
-                    time.sleep(0.1)
             # compute median cloud cover        
             pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
             if VERBOSE:
@@ -328,6 +326,7 @@ if __name__ == "__main__":
     markdown_str += "The forecast is generated using the following parameters:\n\n"
     markdown_str += f"Maximum cloud cover: {args.maxclouds} percent\n\n"
     markdown_str += f"Look ahead time: {args.look_ahead_hrs} hours\n\n"
+    markdown_str += f" \n\n"
     script_time = datetime.utcnow() - start_time
     # with two decimals in seconds
     script_time = round(script_time.total_seconds(), 2)
