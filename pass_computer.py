@@ -17,10 +17,10 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 # Satellites as dict
 satellites = {
     "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 50},
-    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90-28.5},
-    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90-28.5},
-    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90-20},
-    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90-20},
+    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 28.5},
+    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 28.5},
+    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 20},
+    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 20},
 }
 
 # Locations as dict
@@ -29,6 +29,9 @@ locations = {
     "Tyrifjorden": {"lat": 60.03, "lon": 10.18, "alt": 0.0},
     "Hemnessjøen": {"lat": 59.68, "lon": 11.46, "alt": 0.0},
     "Vansjø": {"lat": 59.40, "lon": 10.82, "alt": 0.0},
+    "Årungen": {"lat": 59.69, "lon": 10.74, "alt": 0.0},
+    "Gjersjøen": {"lat": 59.79, "lon": 10.78, "alt": 0.0},
+
 }
 
 
@@ -51,12 +54,16 @@ def collect_TLEs(satellites: dict) -> dict:
             tle = tle.text.splitlines()
             satellites[satellite]['line1'] = tle[1]
             satellites[satellite]['line2'] = tle[2]
-    except:
+    except BaseException:
         print('Error. TLE Update not successful')
     return satellites
 
 
-def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*3, minimumElevation: float = 40) -> dict:
+def compute_passes(
+        satellites: dict,
+        locations: dict,
+        look_ahead_time: int = 24 * 3,
+        minimumElevation: float = 40) -> dict:
     """
     Computes passes for each satellite at each location
 
@@ -90,7 +97,7 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
                 locations[loc]['alt'],
                 tol=0.001,
                 horizon=int(minimumElevation // 1)
-                )
+            )
 
             # extract max elevation datetime and compute elevation
             pass_info = get_pass_info_list(locations, sat_obj, loc, loc_info)
@@ -98,12 +105,13 @@ def compute_passes(satellites: dict, locations: dict, look_ahead_time: int = 24*
 
     return satellites
 
+
 def get_pass_info_list(
-        locations: dict, 
-        sat_obj: Orbital, 
+        locations: dict,
+        sat_obj: Orbital,
         loc: str,
         loc_info: list
-        ) -> list:
+) -> list:
     """
     Extracts max elevation datetime and computes elevation for each pass
 
@@ -117,17 +125,19 @@ def get_pass_info_list(
         list: list of passes with max elevation datetime and elevation
     """
     import time
+    from pyorbital.orbital import astronomy
+
     pass_info = []
     for i in range(len(loc_info)):
         pass_info.append(dict())
 
         pass_info[i]["UTC0_datetime"] = loc_info[i][2].strftime(
-                    "%Y-%m-%d %H:%M:%SZ")
+            "%Y-%m-%d %H:%M:%SZ")
 
         temp_obj = sat_obj.get_observer_look(loc_info[i][2],
-                                                     locations[loc]["lon"],
-                                                     locations[loc]["lat"],
-                                                     locations[loc]["alt"])
+                                             locations[loc]["lon"],
+                                             locations[loc]["lat"],
+                                             locations[loc]["alt"])
 
         # reduce to two decimals
         temp_obj = [round(temp_obj[0], 2), round(temp_obj[1], 2)]
@@ -135,25 +145,31 @@ def get_pass_info_list(
         pass_info[i]["azimuth"] = temp_obj[0]
         pass_info[i]["elevation"] = temp_obj[1]
 
+        # check sun zenith angle
+        pass_info[i]["sun_zenith_angle"] = astronomy.sun_zenith_angle(
+            loc_info[i][2], locations[loc]["lon"], locations[loc]["lat"])
+
         if DEBUG:
             pass_info[i]["cloud_cover"] = -1
+        elif pass_info[i]["sun_zenith_angle"] > 90:
+            pass_info[i]["cloud_cover"] = 101
         else:
-            # Make a grid of .1 degree around the location and compute cloud cover for each point.
+            # Make a grid of .05 degree around the location and compute cloud
+            # cover for each point.
             median_cloud_cover = []
             for lat_steps in range(-1, 2):
                 for lon_steps in range(-1, 2):
                     CCMET_obj = CCMET(
-                        locations[loc]["lat"] + lat_steps * 0.1, 
-                        locations[loc]["lon"] + lon_steps * 0.1, 
+                        locations[loc]["lat"] + lat_steps * 0.05,
+                        locations[loc]["lon"] + lon_steps * 0.05,
                         loc_info[i][2])
                     median_cloud_cover.append(CCMET_obj.get_cloud_cover())
-            # compute median cloud cover        
+            # compute median cloud cover
             pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
             if VERBOSE:
-                print(f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']} for {sat_obj.name}")
+                print(
+                    f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']} for {sat_obj.name}")
     return pass_info
-
-
 
 
 def date_table_generator(satellites_passes: dict,
@@ -259,7 +275,7 @@ def _get_cli_args():
         "--look_ahead_hrs",
         help="How many hours to look ahead",
         type=int,
-        default=24*8,
+        default=24 * 6,
     )
 
     parser.add_argument(
@@ -285,6 +301,7 @@ def _get_cli_args():
     args = parser.parse_args()
     return args
 
+
 if __name__ == "__main__":
     args = _get_cli_args()
 
@@ -294,7 +311,7 @@ if __name__ == "__main__":
     if args.debug:
         DEBUG = True
         print("Debug mode activated")
-    
+
     if args.verbose:
         VERBOSE = True
         print("Verbose mode activated")
@@ -312,7 +329,8 @@ if __name__ == "__main__":
     satellites_passes = compute_passes(
         satellites, locations, args.look_ahead_hrs, args.minelev)
 
-    date_table = date_table_generator(satellites_passes, args.minelev, args.maxclouds)
+    date_table = date_table_generator(
+        satellites_passes, args.minelev, args.maxclouds)
 
     markdown_str = "# Satellite Forecaster\n\n"
 
@@ -322,7 +340,7 @@ if __name__ == "__main__":
         " that are used in the forecast. The forecast is generated using the pyorbital library. " + \
         "The forecast is generated for the next week and is updated every day. " + \
         "The cloud cover is retrieved from the Norwegian Meteorological Institute. " + \
-        "The cloud cover is given as the median of a grid at the location."    
+        "The cloud cover is given as the median of a grid at the location."
     markdown_str += "The forecast is generated using the following parameters:\n\n"
     markdown_str += f"Maximum cloud cover: {args.maxclouds} percent\n\n"
     markdown_str += f"Look ahead time: {args.look_ahead_hrs} hours\n\n"
@@ -359,11 +377,17 @@ if __name__ == "__main__":
     output += '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">\n'
     output += "<div style=\"width: 800px; margin-left: auto; margin-right: auto;\">\n"
     pdoc_args = ['--mathjax']
-    output += pypandoc.convert_text(markdown_str, 'html5', format='md', extra_args=pdoc_args, encoding='utf-8')
+    output += pypandoc.convert_text(markdown_str,
+                                    'html5',
+                                    format='md',
+                                    extra_args=pdoc_args,
+                                    encoding='utf-8')
     output += "</div>"
     output += "\n</body>\n</html>"
 
-    output = output.replace("<table>", "<table class='table' width=\"750px\" style=\"margin-left: auto; margin-right: auto;\">")
+    output = output.replace(
+        "<table>",
+        "<table class='table' width=\"750px\" style=\"margin-left: auto; margin-right: auto;\">")
     # make all table elements center
     output = output.replace("<td>", "<td align=\"center\">")
     output = output.replace("<th>", "<th align=\"center\">")
