@@ -1,72 +1,72 @@
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+# # Sample workflow for building and deploying a Jekyll site to GitHub Pages
+# name: Deploy Jekyll with GitHub Pages dependencies preinstalled
 
-on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
-  schedule:
-    - cron: '0 5 * * *'
+# on:
+#   # Runs on pushes targeting the default branch
+#   push:
+#     branches: ["main"]
+#   schedule:
+#     - cron: '0 5 * * *'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
   
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# permissions:
+#   contents: read
+#   pages: write
+#   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+# # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# concurrency:
+#   group: "pages"
+#   cancel-in-progress: false
 
-jobs:
-  deploy:
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-    steps:
-      - uses: actions/checkout@v3
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-22.04
+#     permissions:
+#       contents: write
+#     concurrency:
+#       group: ${{ github.workflow }}-${{ github.ref }}
+#     steps:
+#       - uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.8'
+#       - name: Setup Python
+#         uses: actions/setup-python@v3
+#         with:
+#           python-version: '3.8'
 
-      - name: Upgrade pip
-        run: |
-          # install pip=>20.1 to use "pip cache dir"
-          python3 -m pip install --upgrade pip
+#       - name: Upgrade pip
+#         run: |
+#           # install pip=>20.1 to use "pip cache dir"
+#           python3 -m pip install --upgrade pip
 
-      - name: Get pip cache dir
-        id: pip-cache
-        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+#       - name: Get pip cache dir
+#         id: pip-cache
+#         run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+#       - name: Cache dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: ${{ steps.pip-cache.outputs.dir }}
+#           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
-        run: python3 -m pip install -r ./requirements.txt
+#       - name: Install dependencies
+#         run: python3 -m pip install -r ./requirements.txt
 
-      # Run your script
-      - name: Run pass_computer.py script
-        run: python3 pass_computer.py
+#       # Run your script
+#       - name: Run pass_computer.py script
+#         run: python3 pass_computer.py
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.4
-        with:
-          branch: main
-          folder: .
-          clean: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Deploy to GitHub Pages
+#         uses: JamesIves/github-pages-deploy-action@4.1.4
+#         with:
+#           branch: main
+#           folder: .
+#           clean: true
+#           token: ${{ secrets.GITHUB_TOKEN }}
