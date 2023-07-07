@@ -29,9 +29,23 @@ locations = {
     "Tyrifjorden": {"lat": 60.03, "lon": 10.18, "alt": 0.0},
     "Hemnessjøen": {"lat": 59.68, "lon": 11.46, "alt": 0.0},
     "Vansjø": {"lat": 59.40, "lon": 10.82, "alt": 0.0},
-    "Årungen": {"lat": 59.69, "lon": 10.74, "alt": 0.0},
     "Gjersjøen": {"lat": 59.79, "lon": 10.78, "alt": 0.0},
-
+    "Solbergstrand": {"lat": 59.620, "lon": 10.650, "alt": 0.0},
+    "Eikeren": {"lat": 59.6591812, "lon": 9.9289544, "alt": 0.0},
+    "Bergsvannet": {"lat": 59.5757441, "lon": 10.0689287, "alt": 0.0},
+    "Akersvannet": {"lat": 59.24417, "lon": 10.32762, "alt": 0.0},
+    "Skulerudsjøen": {"lat": 59.66426, "lon": 11.54688, "alt": 0.0},
+    "Rødenessjøen": {"lat": 59.56363, "lon": 11.60278, "alt": 0.0},
+    "Aremarksjøen": {"lat": 59.2606265, "lon": 11.6740797, "alt": 0.0},
+    "Femsjøen": {"lat": 59.15268, "lon": 11.49769, "alt": 0.0},
+    "Øyeren": {"lat": 59.69713, "lon": 11.23023, "alt": 0.0},
+    "Årungen": {"lat": 59.683, "lon": 10.733, "alt": 0.0},
+    "Tunevatnet": {"lat": 59.305, "lon": 11.093, "alt": 0.0},
+    "Østensjøvannet": {"lat": 59.689, "lon": 10.829, "alt": 0.0},
+    "Øymarksjøen": {"lat": 59.38921, "lon": 11.65738, "alt": 0.0},
+    "Lundebyvatnet": {"lat": 59.550, "lon": 11.480, "alt": 0.0},
+    "Solbergstrand": {"lat": 59.620, "lon": 10.650, "alt": 0.0},
+    "Glomma-Løperen": {"lat": 59.170, "lon": 10.960, "alt": 0.0},
 }
 
 
@@ -198,7 +212,7 @@ def date_table_generator(satellites_passes: dict,
                 sza = astronomy.sun_zenith_angle(pass_list["UTC0_datetime"],
                                                  locations[loc]["lon"],
                                                  locations[loc]["lat"])
-                if sza > 90.0:
+                if sza > 55.0:
                     continue
 
                 # check if min_elev key exists in satellite dict
@@ -291,6 +305,10 @@ def _get_cli_args():
         type=float,
         default=50.0,
     )
+
+    parser.add_argument("--gitupload",
+                        help="Upload to github",
+                        action="store_true")
 
     parser.add_argument(
         "--verbose",
@@ -396,3 +414,11 @@ if __name__ == "__main__":
 
     with open("index.html", "w") as f:
         f.write(output)
+
+    if args.gitupload:
+        print("Uploading to github")
+        os.system("git add index.html")
+        # get date of today
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        os.system(f"git commit -m \"Update index.html, Day of push {today}\"")
+        os.system("git push")
