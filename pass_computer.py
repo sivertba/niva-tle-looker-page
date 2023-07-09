@@ -421,4 +421,5 @@ if __name__ == "__main__":
         # get date of today
         today = datetime.utcnow().strftime("%Y-%m-%d")
         os.system(f"git commit -m \"Update index.html, Day of push {today}\"")
-        os.system("git push")
+	#os.system("git pull")
+        os.system("git push --force")
