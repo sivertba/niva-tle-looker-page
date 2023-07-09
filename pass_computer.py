@@ -16,11 +16,11 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Satellites as dict
 satellites = {
-    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 50},
-    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 28.5},
-    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 28.5},
-    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 20},
-    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 20},
+    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 60},
+    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
+    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
+    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 25},
+    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 25},
 }
 
 # Locations as dict
@@ -165,7 +165,7 @@ def get_pass_info_list(
 
         if DEBUG:
             pass_info[i]["cloud_cover"] = -1
-        elif pass_info[i]["sun_zenith_angle"] > 90:
+        elif pass_info[i]["sun_zenith_angle"] > 70:
             pass_info[i]["cloud_cover"] = 101
         else:
             # Make a grid of .05 degree around the location and compute cloud
@@ -182,7 +182,7 @@ def get_pass_info_list(
             pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
             if VERBOSE:
                 print(
-                    f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']} for {sat_obj.name}")
+                    f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']}")
     return pass_info
 
 
@@ -303,7 +303,7 @@ def _get_cli_args():
         "--maxclouds",
         help="Maximum cloud cover for passes",
         type=float,
-        default=50.0,
+        default=80.0,
     )
 
     parser.add_argument("--gitupload",
@@ -417,7 +417,7 @@ if __name__ == "__main__":
 
     if args.gitupload:
         print("Uploading to github")
-        os.system("git add index.html")
+        os.system("git add *.html *.py")
         # get date of today
         today = datetime.utcnow().strftime("%Y-%m-%d")
         os.system(f"git commit -m \"Update index.html, Day of push {today}\"")
