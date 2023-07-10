@@ -13,6 +13,8 @@ VERBOSE = False
 
 file_dir = os.path.dirname(os.path.realpath(__file__))
 
+# set dir of file to current working directory
+os.chdir(file_dir)
 
 # Satellites as dict
 satellites = {
@@ -303,7 +305,7 @@ def _get_cli_args():
         "--maxclouds",
         help="Maximum cloud cover for passes",
         type=float,
-        default=80.0,
+        default=101.0,
     )
 
     parser.add_argument("--gitupload",
