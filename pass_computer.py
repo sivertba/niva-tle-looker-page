@@ -18,7 +18,7 @@ os.chdir(file_dir)
 
 # Satellites as dict
 satellites = {
-    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 60},
+    "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 40},
     "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
     "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
     "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 25},
@@ -298,7 +298,7 @@ def _get_cli_args():
         "--minelev",
         help="Minimum elevation for passes",
         type=float,
-        default=40.0,
+        default=30.0,
     )
 
     parser.add_argument(
