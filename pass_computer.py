@@ -21,8 +21,8 @@ satellites = {
     "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 40},
     "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": "Depends on location"},
     "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": "Depends on location"},
-    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 80},
-    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 80},
+    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 10},
+    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 10},
 }
 
 # Locations as dict
