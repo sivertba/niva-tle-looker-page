@@ -234,9 +234,9 @@ def date_table_generator(satellites_passes: dict,
 
                         # check if target is west of the satellite
                         if sat_lon > locations[loc]["lon"]:
-                            min_elev = 90-(68.5/2 + 12.6)
+                            min_elev = 45 # geogebra simulation
                         else:
-                            min_elev = 90-(68.5/2 - 12.6)
+                            min_elev = 69 # geogebra simulation
                 else:
                     min_elev = min_elev_static
 
