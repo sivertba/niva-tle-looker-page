@@ -19,10 +19,10 @@ os.chdir(file_dir)
 # Satellites as dict
 satellites = {
     "HYPSO-1": {"catnr": 51053, "line1": "Line1", "line2": "Line2", "min_elev": 40},
-    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
-    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 30},
-    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 25},
-    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 25},
+    "Sentinel-3A": {"catnr": 41335, "line1": "Line1", "line2": "Line2", "min_elev": "Depends on location"},
+    "Sentinel-3B": {"catnr": 43437, "line1": "Line1", "line2": "Line2", "min_elev": "Depends on location"},
+    "SENTINEL-2A": {"catnr": 40697, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 80},
+    "SENTINEL-2B": {"catnr": 42063, "line1": "Line1", "line2": "Line2", "min_elev": 90 - 80},
 }
 
 # Locations as dict
@@ -140,7 +140,6 @@ def get_pass_info_list(
     Returns:
         list: list of passes with max elevation datetime and elevation
     """
-    import time
     from pyorbital.orbital import astronomy
 
     pass_info = []
@@ -220,6 +219,24 @@ def date_table_generator(satellites_passes: dict,
                 # check if min_elev key exists in satellite dict
                 if "min_elev" in satellites_passes[satellite]:
                     min_elev = satellites_passes[satellite]["min_elev"]
+                    # if "Sentinel-3" in satellite compensate for the fact that
+                    # the 68.5 degree swath field of view is not centred at nadir, 
+                    # but is tilted 12.6 degrees westwards
+                    if "Sentinel-3" in satellite:
+                        sat_obj_temp = Orbital(
+                            satellite,
+                            line1=satellites[satellite]['line1'],
+                            line2=satellites[satellite]['line2']
+                        )
+                        sat_pos = sat_obj_temp.get_position(
+                            pass_list["UTC0_datetime"])
+                        sat_lon = sat_pos[0][0]
+
+                        # check if target is west of the satellite
+                        if sat_lon > locations[loc]["lon"]:
+                            min_elev = 90-(68.5/2 + 12.6)
+                        else:
+                            min_elev = 90-(68.5/2 - 12.6)
                 else:
                     min_elev = min_elev_static
 
@@ -423,5 +440,5 @@ if __name__ == "__main__":
         # get date of today
         today = datetime.utcnow().strftime("%Y-%m-%d")
         os.system(f"git commit -m \"Update index.html, Day of push {today}\"")
-	#os.system("git pull")
+        # os.system("git pull")
         os.system("git push --force")
