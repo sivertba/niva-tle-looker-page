@@ -240,6 +240,10 @@ def date_table_generator(satellites_passes: dict,
                 else:
                     min_elev = min_elev_static
 
+                if VERBOSE:
+                    print(
+                        f"min_elev for {satellite} at {pass_list['UTC0_datetime']} is {min_elev}")
+
                 if pass_list["elevation"] >= min_elev and pass_list["cloud_cover"] <= max_clouds:
                     # get the date as a string
                     date = pass_list["UTC0_datetime"].split(" ")[0]
