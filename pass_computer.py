@@ -92,8 +92,6 @@ def compute_passes(
     Returns:
         dict: dict of satellites with passes for each location
     """
-    if DEBUG:
-        print("collect_TLEs() successful")
     for satellite in satellites:
         # Get orbital object from pyorbital using the TLEs
         sat_obj = Orbital(
@@ -166,8 +164,8 @@ def get_pass_info_list(
 
         if DEBUG:
             pass_info[i]["cloud_cover"] = -1
-        elif pass_info[i]["sun_zenith_angle"] > 70:
-            pass_info[i]["cloud_cover"] = 101
+        # elif pass_info[i]["sun_zenith_angle"] > 70:
+        #     pass_info[i]["cloud_cover"] = 101
         else:
             # Make a grid of .05 degree around the location and compute cloud
             # cover for each point.
@@ -181,15 +179,16 @@ def get_pass_info_list(
                     median_cloud_cover.append(CCMET_obj.get_cloud_cover())
             # compute median cloud cover
             pass_info[i]["cloud_cover"] = np.median(median_cloud_cover)
-            if VERBOSE:
-                print(
-                    f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']}")
+        if VERBOSE:
+            print(
+                f"cloud cover for {loc} at {pass_info[i]['UTC0_datetime']} is {pass_info[i]['cloud_cover']}")
     return pass_info
 
 
 def date_table_generator(satellites_passes: dict,
                          min_elev: float = 40.0,
-                         max_clouds: float = 100.0) -> dict:
+                         max_clouds: float = 100.0,
+                         min_solarelevation: float = 10.0) -> dict:
     """
     Generates a date table from the passes
 
@@ -197,6 +196,7 @@ def date_table_generator(satellites_passes: dict,
         satellites_passes (dict): dict of satellites with passes for each location
         min_elev (float, optional): minimum elevation in degrees. Defaults to 40.0.
         max_clouds (float, optional): maximum cloud cover in percent. Defaults to 100.0.
+        min_solarelevation (float, optional): minimum solar elevation in degrees. Defaults to 10.0.
 
     Returns:
         dict: dict of dates with passes
@@ -213,7 +213,13 @@ def date_table_generator(satellites_passes: dict,
                 sza = astronomy.sun_zenith_angle(pass_list["UTC0_datetime"],
                                                  locations[loc]["lon"],
                                                  locations[loc]["lat"])
-                if sza > 55.0:
+                
+                # compute solare elevation
+                solarelev = 90 - sza
+
+                if solarelev < min_solarelevation:
+                    print(
+                        f"Sun elevation angle for {satellite} at {pass_list['UTC0_datetime']} is {solarelev}, too low")
                     continue
 
                 # check if min_elev key exists in satellite dict
@@ -312,7 +318,7 @@ def _get_cli_args():
         "--look_ahead_hrs",
         help="How many hours to look ahead",
         type=int,
-        default=24 * 6,
+        default=24 * 4,
     )
 
     parser.add_argument(
@@ -337,6 +343,13 @@ def _get_cli_args():
         "--verbose",
         help="Print verbose information",
         action="store_true",
+    )
+
+    parser.add_argument(
+        "--min_solarelevation",
+        help="Minimum solar elevation for passes",
+        type=float,
+        default=10.0,
     )
 
     args = parser.parse_args()
@@ -366,12 +379,25 @@ if __name__ == "__main__":
         satellites = collect_TLEs(satellites)
         with open("tle/satellites.json", "w") as f:
             json.dump(satellites, f, indent=1)
+    
+    if VERBOSE:
+        print("TLEs collected")
+        # format json string with indent of 1
+        print(json.dumps(satellites, indent=1))
 
     satellites_passes = compute_passes(
         satellites, locations, args.look_ahead_hrs, args.minelev)
 
     date_table = date_table_generator(
-        satellites_passes, args.minelev, args.maxclouds)
+        satellites_passes, 
+        args.minelev, 
+        args.maxclouds,
+        args.min_solarelevation)
+    
+    if VERBOSE:
+        print("Date table generated")
+        # format json string with indent of 1
+        print(json.dumps(date_table, indent=1))
 
     markdown_str = "# Satellite Forecaster\n\n"
 
